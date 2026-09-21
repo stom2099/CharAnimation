@@ -135,9 +135,9 @@ export function buildSheetMeta(input: SheetMetaInput): string {
 }
 
 export function sheetFiles(baseName: string, png: Blob, json: string): ExportFile[] {
-  const stem = baseName.replace(/\.[a-z0-9]+$/i, '');
+  const stem = baseName.replace(/\.sheet\.png$/i, '').replace(/\.[a-z0-9]+$/i, '');
   return [
-    { name: `${stem}.png`, blob: png },
-    { name: `${stem}.json`, blob: new Blob([json], { type: 'application/json' }) },
+    { name: `${stem}.sheet.png`, blob: png },
+    { name: `${stem}.sheet.json`, blob: new Blob([json], { type: 'application/json' }) },
   ];
 }

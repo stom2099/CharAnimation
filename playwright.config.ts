@@ -20,8 +20,16 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        // The sandbox ships a Chromium build that may not match the bundled
+        // Playwright revision; point at it explicitly when it is present.
         launchOptions: {
-          args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+          executablePath: process.env.CHROMIUM_PATH || undefined,
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--enable-unsafe-swiftshader',
+            '--no-sandbox',
+          ],
         },
       },
     },

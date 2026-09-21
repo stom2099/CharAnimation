@@ -85,7 +85,10 @@ export class WebGLMeshRenderer implements MeshRenderer {
     const gl = canvas.getContext('webgl2', {
       alpha: true,
       premultipliedAlpha: true,
-      antialias: opts.antialias ?? true,
+      // MSAA is deliberately off. On a shared-edge mesh every interior edge
+      // would be antialiased from both sides and show up as a bright seam.
+      // Callers supersample the drawing buffer instead.
+      antialias: opts.antialias ?? false,
       preserveDrawingBuffer: true,
       desynchronized: false,
       powerPreference: 'high-performance',

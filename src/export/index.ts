@@ -76,7 +76,7 @@ export async function runExport(
         files = sheetFiles(fileName, sheet.png, sheet.json);
         if (options.spritesheet.zip) {
           onProgress?.({ phase: 'package', done: 0, total: 1 });
-          const zipped = await zipFiles(files, fileName.replace(/\.png$/i, '.zip'));
+          const zipped = await zipFiles(files, fileName.replace(/\.sheet\.png$/i, '.zip'));
           onProgress?.({ phase: 'package', done: 1, total: 1 });
           files = [zipped];
         }
@@ -103,26 +103,25 @@ export async function runExport(
   }
 }
 
-/** Rough output-size estimate, used to warn before an expensive export. */
+/**
+ * Rough output-size estimate shown before an export starts.
+ *
+ * Bytes per rendered pixel, measured on the bundled samples. Real files vary a
+ * lot with how busy the artwork is, so this is a ballpark, not a promise.
+ */
+const BYTES_PER_PIXEL: Record<ExportOptions['format'], number> = {
+  gif: 0.07,
+  apng: 0.3,
+  spritesheet: 0.38,
+  mp4: 0.03,
+  webm: 0.025,
+};
+
 export function estimateBytes(
   format: ExportOptions['format'],
   width: number,
   height: number,
   frames: number,
 ): number {
-  const pixels = width * height * frames;
-  switch (format) {
-    case 'gif':
-      return pixels * 0.32;
-    case 'apng':
-      return pixels * 0.9;
-    case 'spritesheet':
-      return pixels * 1.1;
-    case 'mp4':
-      return pixels * 0.07;
-    case 'webm':
-      return pixels * 0.06;
-    default:
-      return pixels;
-  }
+  return width * height * frames * (BYTES_PER_PIXEL[format] ?? 0.3);
 }

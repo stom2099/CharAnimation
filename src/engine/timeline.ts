@@ -23,3 +23,25 @@ export function frameTime(index: number, fps: number): number {
 export function frameDelayMs(fps: number): number {
   return 1000 / fps;
 }
+
+/**
+ * Integer per-frame delays that add up to the exact loop duration.
+ *
+ * Container formats store delays in coarse units — GIF in hundredths of a
+ * second, APNG in milliseconds. Rounding each frame independently drifts: at
+ * 15 fps a GIF would round 66.67 ms up to 70 ms on every frame and run 5%
+ * slow. Rounding the running total instead spreads the remainder across the
+ * loop, so the animation keeps its intended tempo.
+ *
+ * @param unitMs milliseconds per unit of the target container (10 for GIF, 1 for APNG)
+ */
+export function frameDelays(frames: number, fps: number, unitMs: number): number[] {
+  const delays: number[] = [];
+  let previous = 0;
+  for (let i = 1; i <= frames; i++) {
+    const boundary = Math.round((i * 1000) / fps / unitMs);
+    delays.push(Math.max(1, boundary - previous));
+    previous = boundary;
+  }
+  return delays;
+}

@@ -49,7 +49,7 @@ export class FrameRenderer {
     this.view = viewForBox(box, bufferW, bufferH, (options.padding ?? 0) * this.ssaa);
 
     this.glCanvas = createCanvas(bufferW, bufferH);
-    this.renderer = createRenderer(this.glCanvas, options.preference ?? 'auto', { antialias: true });
+    this.renderer = createRenderer(this.glCanvas, options.preference ?? 'auto', { antialias: false });
     this.renderer.resize(bufferW, bufferH);
     this.renderer.setTexture(cutout);
 

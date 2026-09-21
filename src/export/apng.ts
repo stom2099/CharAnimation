@@ -1,5 +1,5 @@
 import UPNG from 'upng-js';
-import { frameDelayMs } from '../engine';
+import { frameDelays } from '../engine';
 import type { ExportOptions, ExportProgressFn } from './types';
 import type { FrameStream } from './frames';
 
@@ -28,7 +28,7 @@ export async function encodeApng(
   );
 
   onProgress?.({ phase: 'encode', done: 0, total: 1 });
-  const delays = buffers.map(() => Math.round(frameDelayMs(options.fps)));
+  const delays = frameDelays(buffers.length, options.fps, 1);
   // cnum = 0 keeps it lossless; anything else quantises to a palette.
   const png = UPNG.encode(buffers, stream.width, stream.height, 0, delays);
   onProgress?.({ phase: 'encode', done: 1, total: 1 });

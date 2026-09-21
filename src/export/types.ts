@@ -67,7 +67,8 @@ export const SUPPORTS_ALPHA: Record<ExportFormat, boolean> = {
 export const FORMAT_EXTENSION: Record<ExportFormat, string> = {
   gif: 'gif',
   apng: 'png',
-  spritesheet: 'png',
+  // Suffixed so a sprite sheet never overwrites an APNG of the same animation.
+  spritesheet: 'sheet.png',
   webm: 'webm',
   mp4: 'mp4',
 };

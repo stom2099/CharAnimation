@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSheetMeta, planSheet } from '../../src/export/spritesheet';
+import { buildSheetMeta, planSheet, sheetFiles } from '../../src/export/spritesheet';
 import { buildFileName, estimateBytes } from '../../src/export';
 
 describe('planSheet', () => {
@@ -80,6 +80,16 @@ describe('buildSheetMeta', () => {
     ) as { animations: Record<string, string[]> };
     expect(long.animations.idle[0]).toBe('idle_00');
     expect(long.animations.idle[99]).toBe('idle_99');
+  });
+});
+
+describe('sheetFiles', () => {
+  it('suffixes sheet files so they never collide with an APNG export', () => {
+    const files = sheetFiles('cat_sway_256x256_24fps.sheet.png', new Blob(['x']), '{}');
+    expect(files.map((f) => f.name)).toEqual([
+      'cat_sway_256x256_24fps.sheet.png',
+      'cat_sway_256x256_24fps.sheet.json',
+    ]);
   });
 });
 

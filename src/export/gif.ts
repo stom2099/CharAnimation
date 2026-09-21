@@ -1,5 +1,5 @@
 import { GIFEncoder, applyPalette, quantize } from 'gifenc';
-import { frameDelayMs } from '../engine';
+import { frameDelays } from '../engine';
 import type { ExportOptions, ExportProgressFn } from './types';
 import type { FrameStream } from './frames';
 
@@ -17,7 +17,8 @@ export async function encodeGif(
   signal?: AbortSignal,
 ): Promise<Blob> {
   const gif = GIFEncoder();
-  const delay = Math.round(frameDelayMs(options.fps));
+  // GIF stores delays in hundredths of a second; spread the rounding error.
+  const delays = frameDelays(stream.frames, options.fps, 10).map((cs) => cs * 10);
   const format = options.transparent ? 'rgba4444' : 'rgb565';
   const colors = Math.max(2, Math.min(256, options.gif.colors));
 
@@ -47,7 +48,7 @@ export async function encodeGif(
       const indexed = applyPalette(rgba, sharedPalette, format);
       gif.writeFrame(indexed, image.width, image.height, {
         palette: index === 0 || !options.gif.sharedPalette ? sharedPalette : undefined,
-        delay,
+        delay: delays[index],
         repeat: 0,
         transparent: options.transparent,
         transparentIndex: options.transparent ? findTransparentIndex(sharedPalette) : 0,

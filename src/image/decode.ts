@@ -26,8 +26,9 @@ export class ImageDecodeError extends Error {
   constructor(
     message: string,
     readonly code: 'type' | 'size' | 'decode',
+    options?: { cause?: unknown },
   ) {
-    super(message);
+    super(message, options);
     this.name = 'ImageDecodeError';
   }
 }
@@ -50,7 +51,7 @@ export async function decodeSource(file: File | Blob): Promise<DecodedSource> {
   try {
     bitmap = await createImageBitmap(file, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
   } catch (cause) {
-    throw new ImageDecodeError('The file could not be decoded as an image', 'decode');
+    throw new ImageDecodeError('The file could not be decoded as an image', 'decode', { cause });
   }
 
   const originalWidth = bitmap.width;
