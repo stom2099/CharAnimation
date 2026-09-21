@@ -164,6 +164,7 @@ export const en: Record<MessageKey, string> = {
   'recent.note': 'Projects stay in this browser and are never uploaded.',
 
   'project.export': 'Save project file',
+  'project.exportHint': 'The .charanim.zip carries both the cut-out image and the settings.',
   'project.import': 'Open project file',
   'project.imported': 'Settings loaded from the project file',
 

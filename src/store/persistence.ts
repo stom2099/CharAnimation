@@ -138,6 +138,52 @@ export function toProjectFile(project: {
   };
 }
 
+export const BUNDLE_JSON_ENTRY = 'project.json';
+export const BUNDLE_IMAGE_ENTRY = 'cutout.png';
+
+/**
+ * Packs the parameters and the cut-out image into one shareable file.
+ *
+ * A bare JSON file only carries the settings, which is useless to someone who
+ * does not already have the image. The zip is self-contained: open it on
+ * another machine and the whole project is there.
+ */
+export async function packProjectBundle(file: ProjectFile, cutout: Blob): Promise<Blob> {
+  const { zipSync } = await import('fflate');
+  const zipped = zipSync(
+    {
+      [BUNDLE_JSON_ENTRY]: new TextEncoder().encode(JSON.stringify(file, null, 2)),
+      [BUNDLE_IMAGE_ENTRY]: new Uint8Array(await cutout.arrayBuffer()),
+    },
+    { level: 6 },
+  );
+  return new Blob([zipped.slice().buffer as ArrayBuffer], { type: 'application/zip' });
+}
+
+export interface LoadedBundle {
+  file: ProjectFile;
+  cutout: Blob | null;
+}
+
+/** Accepts either the zip bundle or a plain settings JSON. */
+export async function readProjectBundle(input: Blob): Promise<LoadedBundle> {
+  const head = new Uint8Array(await input.slice(0, 2).arrayBuffer());
+  const isZip = head[0] === 0x50 && head[1] === 0x4b;
+
+  if (!isZip) return { file: parseProjectFile(await input.text()), cutout: null };
+
+  const { unzipSync } = await import('fflate');
+  const entries = unzipSync(new Uint8Array(await input.arrayBuffer()));
+  const json = entries[BUNDLE_JSON_ENTRY];
+  if (!json) throw new Error('The bundle has no project.json');
+  const image = entries[BUNDLE_IMAGE_ENTRY];
+
+  return {
+    file: parseProjectFile(new TextDecoder().decode(json)),
+    cutout: image ? new Blob([image.slice().buffer as ArrayBuffer], { type: 'image/png' }) : null,
+  };
+}
+
 export function parseProjectFile(json: string): ProjectFile {
   const raw = JSON.parse(json) as Partial<ProjectFile>;
   if (raw.app !== 'CharAnimation') throw new Error('Not a CharAnimation project file');

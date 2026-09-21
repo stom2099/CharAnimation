@@ -253,3 +253,32 @@ test('the Canvas2D fallback renderer still draws and exports', async ({ page }) 
   await page.getByTestId('start-export').click();
   expect((await download).suggestedFilename()).toMatch(/\.gif$/);
 });
+
+test('a project file round-trips the image and the settings', async ({ page }) => {
+  await openSample(page, 'plant');
+  await page.getByTestId('preset-wind').click();
+
+  const recent = page.getByRole('button', { name: /Gần đây|Recent/ });
+  await recent.click();
+  const download = page.waitForEvent('download', { timeout: 30_000 });
+  await page.getByTestId('save-project-file').click();
+  const bundle = await download;
+  expect(bundle.suggestedFilename()).toBe('plant.charanim.zip');
+
+  const saved = await readFile((await bundle.path())!);
+  expect(saved.subarray(0, 2).toString('ascii'), 'zip signature').toBe('PK');
+  expect(saved.includes(Buffer.from('project.json', 'ascii'))).toBe(true);
+  expect(saved.includes(Buffer.from('cutout.png', 'ascii'))).toBe(true);
+  await page.keyboard.press('Escape');
+
+  // Start over, then reopen the file: both the image and the preset come back.
+  await page.getByRole('button', { name: /Dự án mới|New project/ }).click();
+  await expect(page.getByText(/Drop an image here|Kéo thả ảnh vào đây/)).toBeVisible();
+
+  await recent.click();
+  await page.getByTestId('open-project-file').click();
+  await page.locator('input[type=file][accept*=zip]').setInputFiles((await bundle.path())!);
+
+  await expect(page.getByTestId('open-export')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('preset-wind')).toHaveAttribute('aria-pressed', 'true');
+});

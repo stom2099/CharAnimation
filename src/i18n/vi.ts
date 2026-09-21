@@ -162,6 +162,7 @@ export const vi = {
   'recent.note': 'Dự án được lưu trong trình duyệt này, không gửi đi đâu cả.',
 
   'project.export': 'Lưu tệp dự án',
+  'project.exportHint': 'Tệp .charanim.zip gồm cả ảnh đã tách nền lẫn thiết lập.',
   'project.import': 'Mở tệp dự án',
   'project.imported': 'Đã nạp thiết lập từ tệp dự án',
 

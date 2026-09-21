@@ -157,8 +157,13 @@ Một store Zustand duy nhất. Vòng lặp render đọc store bằng
 được phép đăng ký lại hay kích hoạt render React.
 
 Dự án được tự lưu vào IndexedDB sau 800 ms kể từ thay đổi cuối, giữ tối đa 12
-dự án gần nhất. Tệp `.charanim.json` chứa tham số để chia sẻ thiết lập mà không
-kèm ảnh.
+dự án gần nhất.
+
+Để chia sẻ, `packProjectBundle()` đóng gói `project.json` và `cutout.png` thành
+một tệp `.charanim.zip`. Tệp chỉ chứa tham số thì vô dụng với người chưa có ảnh,
+nên bản đóng gói là tự đủ: mở trên máy khác là có nguyên dự án.
+`readProjectBundle()` nhận cả hai dạng — zip đầy đủ thì thay toàn bộ dự án, JSON
+tham số thì chỉ áp vào dự án đang mở.
 
 ## Khác biệt so với kế hoạch
 

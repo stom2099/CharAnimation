@@ -3,7 +3,8 @@ import { FileDown, FileUp, Trash2 } from 'lucide-react';
 import {
   deleteProject,
   listProjects,
-  parseProjectFile,
+  packProjectBundle,
+  readProjectBundle,
   toProjectFile,
   type ProjectSummary,
 } from '../../store/persistence';
@@ -22,6 +23,7 @@ export function RecentDialog({ open, onClose }: Props) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const restore = useProject((s) => s.restore);
+  const hasCutout = useProject((s) => s.cutout !== null);
   const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -96,19 +98,20 @@ export function RecentDialog({ open, onClose }: Props) {
         <Button
           size="sm"
           variant="secondary"
+          data-testid="save-project-file"
           icon={<FileDown size={14} />}
-          onClick={() => {
+          disabled={!hasCutout}
+          onClick={async () => {
             const s = useProject.getState();
+            if (!s.cutout) return;
             const file = toProjectFile({
               name: s.sourceName,
               presetId: s.presetId,
               params: s.params,
               exportOptions: s.exportOptions,
             });
-            downloadBlob(
-              new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }),
-              `${s.sourceName.replace(/\.[a-z0-9]+$/i, '')}.charanim.json`,
-            );
+            const stem = s.sourceName.replace(/\.[a-z0-9]+$/i, '') || 'charanim';
+            downloadBlob(await packProjectBundle(file, s.cutout.blob), `${stem}.charanim.zip`);
           }}
         >
           {t('project.export')}
@@ -116,6 +119,7 @@ export function RecentDialog({ open, onClose }: Props) {
         <Button
           size="sm"
           variant="secondary"
+          data-testid="open-project-file"
           icon={<FileUp size={14} />}
           onClick={() => fileRef.current?.click()}
         >
@@ -124,7 +128,7 @@ export function RecentDialog({ open, onClose }: Props) {
         <input
           ref={fileRef}
           type="file"
-          accept=".json,application/json"
+          accept=".zip,.json,application/zip,application/json"
           className="hidden"
           onChange={async (event) => {
             const file = event.target.files?.[0];
@@ -132,9 +136,7 @@ export function RecentDialog({ open, onClose }: Props) {
             if (!file) return;
             const store = useProject.getState();
             try {
-              const parsed = parseProjectFile(await file.text());
-              store.patchParams(parsed.params);
-              store.patchExportOptions(parsed.exportOptions);
+              await store.adoptBundle(await readProjectBundle(file));
               store.pushToast('success', t('project.imported'));
               onClose();
             } catch (error) {
@@ -143,7 +145,9 @@ export function RecentDialog({ open, onClose }: Props) {
           }}
         />
       </div>
-      <p className="mt-3 text-[11px] text-ink-500">{t('recent.note')}</p>
+      <p className="mt-3 text-[11px] text-ink-500">
+        {t('project.exportHint')} {t('recent.note')}
+      </p>
     </Modal>
   );
 }

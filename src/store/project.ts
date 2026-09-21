@@ -25,6 +25,7 @@ import {
   loadProject,
   newProjectId,
   saveProject,
+  type LoadedBundle,
   type StoredProject,
 } from './persistence';
 
@@ -108,6 +109,7 @@ export interface ProjectActions {
 
   persist(thumbnail?: Blob | null): Promise<void>;
   restore(id: string): Promise<boolean>;
+  adoptBundle(bundle: LoadedBundle): Promise<void>;
 }
 
 export type ProjectStore = ProjectState & ProjectActions;
@@ -387,6 +389,39 @@ export const useProject = create<ProjectStore>((set, get) => ({
     };
     await saveProject(project);
     set({ dirty: false });
+  },
+
+  async adoptBundle(bundle) {
+    const { file, cutout: blob } = bundle;
+
+    // A settings-only file patches the current project; a full bundle replaces it.
+    if (!blob) {
+      set({
+        params: file.params,
+        presetId: file.presetId,
+        exportOptions: file.exportOptions,
+        dirty: true,
+        dirtyPivot: true,
+      });
+      return;
+    }
+
+    const image = await blobToImageData(blob);
+    const cutout = await adoptCutout(image);
+    set({
+      ...initialState(),
+      id: newProjectId(),
+      sourceName: file.name,
+      matte: image,
+      cutout,
+      skippedRemoval: true,
+      presetId: file.presetId,
+      params: file.params,
+      exportOptions: file.exportOptions,
+      step: 'animate',
+      dirtyPivot: true,
+      dirty: true,
+    });
   },
 
   async restore(id) {

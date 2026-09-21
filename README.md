@@ -80,6 +80,12 @@ Khi deploy vào thư mục con, đặt `PUBLIC_BASE_PATH=/tên-repo/` lúc build
 Sprite sheet xuất kèm JSON theo chuẩn TexturePacker "JSON Hash", nạp thẳng được
 vào Pixi và Phaser.
 
+## Chia sẻ một dự án
+
+Nút "Lưu tệp dự án" trong hộp thoại Gần đây tạo một tệp `.charanim.zip` chứa cả
+ảnh đã tách nền lẫn toàn bộ thiết lập. Người nhận mở tệp đó là có nguyên dự án,
+không cần ảnh gốc.
+
 ## Khi máy gặp sự cố đồ hoạ
 
 Thêm `?renderer=canvas2d` vào URL để buộc dùng bộ vẽ dự phòng bằng Canvas2D.
@@ -89,7 +95,7 @@ bình thường.
 ## Mức độ đã kiểm chứng
 
 86 unit test phủ phần toán của engine, phép tính alpha và cách xếp sprite sheet.
-11 test end-to-end chạy trên bản build thật và **mở tệp xuất ra để kiểm tra**:
+12 test end-to-end chạy trên bản build thật và **mở tệp xuất ra để kiểm tra**:
 chữ ký GIF89a, khối lặp `NETSCAPE2.0`, khối `acTL`/`fcTL` của APNG, và JSON của
 sprite sheet đối chiếu với số khung hình.
 
