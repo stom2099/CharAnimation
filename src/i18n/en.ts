@@ -29,7 +29,8 @@ export const en: Record<MessageKey, string> = {
   'matte.cancel': 'Cancel',
   'matte.loadingModel': 'Downloading the AI model',
   'matte.processing': 'Processing the image',
-  'matte.firstRun': 'The first run downloads about 40 MB. After that it works instantly, even offline.',
+  'matte.firstRun':
+    'The first run downloads the model and its runtime, a few tens of megabytes. After that it works instantly, even offline.',
   'matte.done': 'Done in {0}',
   'matte.failed': 'Background removal failed',
   'matte.retry': 'Try again',

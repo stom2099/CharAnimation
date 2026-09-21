@@ -29,12 +29,16 @@ export function MatteStep() {
 
   const autoStarted = useRef(false);
 
-  // An image that already carries alpha needs no model download at all.
+  // An image that already carries alpha needs no model at all, so skip both
+  // the download and this screen. A manual skip stays here, where the margin
+  // can still be adjusted against the checkerboard.
   useEffect(() => {
     if (!source || autoStarted.current) return;
     autoStarted.current = true;
-    if (source.hadAlpha) void skipRemoval();
-  }, [source, skipRemoval]);
+    if (source.hadAlpha) {
+      void skipRemoval().then(() => goToStep('animate'));
+    }
+  }, [source, skipRemoval, goToStep]);
 
   if (!source) return null;
 
@@ -44,17 +48,21 @@ export function MatteStep() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:flex-row">
-      <div className="min-w-0 flex-1">
-        {matte ? (
-          <BeforeAfter before={source.image} after={matte} />
-        ) : (
-          <div
-            className="checker overflow-hidden rounded-xl border border-ink-700"
-            style={{ aspectRatio: `${source.width} / ${source.height}`, maxHeight: '52vh' }}
-          >
-            <SourcePreview image={source.image} />
-          </div>
-        )}
+      <div className="flex min-w-0 flex-1 items-start justify-center">
+        <div className="w-full" style={{ maxWidth: `calc(52vh * ${source.width} / ${source.height})` }}>
+          {matte && !skipped ? (
+            // Comparing an image against itself would tell the user nothing,
+            // so the slider only appears when a matte was actually computed.
+            <BeforeAfter before={source.image} after={matte} />
+          ) : (
+            <div
+              className="checker overflow-hidden rounded-xl border border-ink-700"
+              style={{ aspectRatio: `${source.width} / ${source.height}`, maxHeight: '52vh' }}
+            >
+              <SourcePreview image={matte ?? source.image} />
+            </div>
+          )}
+        </div>
       </div>
 
       <aside className="w-full shrink-0 space-y-4 lg:w-80">

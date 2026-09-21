@@ -21,6 +21,9 @@ export interface StoredProject {
   params: AnimParams;
   exportOptions: ExportOptions;
   cutout: Blob;
+  /** Subject bounds inside the stored cutout, so reopening keeps its margin. */
+  subject?: { x: number; y: number; width: number; height: number };
+  paddingRatio?: number;
   thumbnail: Blob | null;
   sourceName: string;
 }

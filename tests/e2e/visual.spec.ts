@@ -13,6 +13,15 @@ test.skip(!process.env.VISUAL, 'set VISUAL=1 to capture screenshots');
 test.use({ viewport: { width: 1280, height: 860 } });
 
 test('capture the whole flow', async ({ page }) => {
+  // Screenshots get shared widely, so capture the English UI regardless of the
+  // browser's language. The store reads this key on first render.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('charanim:locale', 'en');
+    } catch {
+      /* private mode */
+    }
+  });
   const problems: string[] = [];
   page.on('console', (m) => {
     if (m.type() === 'error') problems.push(`console: ${m.text()}`);
@@ -23,10 +32,18 @@ test('capture the whole flow', async ({ page }) => {
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}/01-upload.png` });
 
+  // An opaque image stops on the cut-out screen, which is what we want to show.
+  await page.getByTestId('file-input').setInputFiles('tests/fixtures/opaque.jpg');
+  await page.getByTestId('skip-removal').click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${OUT}/02-cutout.png` });
+  await page.getByTestId('continue-to-animate').click();
+
+  await page.getByRole('button', { name: 'New project' }).click();
   await page.getByTestId('sample-cat').click();
   await page.getByTestId('open-export').waitFor({ timeout: 30_000 });
   await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/02-animate.png` });
+  await page.screenshot({ path: `${OUT}/03-animate.png` });
 
   // Step through the loop so the deformation extremes are visible.
   await page.getByTestId('play-toggle').click();
@@ -45,7 +62,7 @@ test('capture the whole flow', async ({ page }) => {
     });
   }
 
-  await page.getByRole('button', { name: /Tinh chỉnh|Fine tuning/ }).click();
+  await page.getByRole('button', { name: 'Fine tuning' }).click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${OUT}/04-tuning.png` });
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, Sliders, Wand2 } from 'lucide-react';
+import { canvasToBlob, createCanvas, get2d } from '../../image/canvas';
 import { useProject } from '../../store/project';
 import { useT } from '../../i18n';
 import { Button } from '../common/Button';
@@ -10,6 +11,26 @@ import { Timeline } from './Timeline';
 import { ExportDialog } from '../export/ExportDialog';
 
 type Tab = 'presets' | 'tuning';
+
+const THUMBNAIL_SIZE = 128;
+
+/** A small preview for the recent-projects list; the full cutout is stored separately. */
+async function makeThumbnail(image: ImageData): Promise<Blob | null> {
+  try {
+    const scale = Math.min(1, THUMBNAIL_SIZE / Math.max(image.width, image.height));
+    const w = Math.max(1, Math.round(image.width * scale));
+    const h = Math.max(1, Math.round(image.height * scale));
+    const source = createCanvas(image.width, image.height);
+    get2d(source).putImageData(image, 0, 0);
+    const target = createCanvas(w, h);
+    const ctx = get2d(target) as CanvasRenderingContext2D;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source as CanvasImageSource, 0, 0, w, h);
+    return await canvasToBlob(target, 'image/png');
+  } catch {
+    return null;
+  }
+}
 
 export function AnimateStep() {
   const cutout = useProject((s) => s.cutout);
@@ -25,7 +46,9 @@ export function AnimateStep() {
   // Autosave, debounced, so a refresh never loses work.
   useEffect(() => {
     if (!dirty || !cutout) return;
-    const id = setTimeout(() => void persist(cutout.blob), 800);
+    const id = setTimeout(async () => {
+      await persist(await makeThumbnail(cutout.image));
+    }, 800);
     return () => clearTimeout(id);
   }, [dirty, cutout, persist]);
 

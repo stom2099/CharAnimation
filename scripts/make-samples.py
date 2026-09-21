@@ -145,6 +145,18 @@ for i in range(41):
 d.line([(x * S, y * S) for x, y in pts], fill=(120, 128, 140, 255), width=3 * S, joint='curve')
 save(img, W, H, 'balloon.png')
 
+# ---------------------------------------- test fixture: opaque JPEG, no alpha
+# Exercises the manual background-removal path, which the transparent samples
+# skip automatically.
+fix = Image.new('RGB', (240, 300), (118, 176, 214))
+fd = ImageDraw.Draw(fix)
+fd.ellipse([70, 40, 170, 140], fill=(244, 196, 120), outline=(60, 48, 40), width=4)
+fd.rounded_rectangle([64, 140, 176, 262], radius=24, fill=(224, 122, 96), outline=(60, 48, 40), width=4)
+fd.ellipse([95, 75, 112, 96], fill=(40, 36, 34))
+fd.ellipse([130, 75, 147, 96], fill=(40, 36, 34))
+fix.save(os.path.join(os.path.dirname(__file__), '..', 'tests', 'fixtures', 'opaque.jpg'), quality=92)
+print('wrote tests/fixtures/opaque.jpg')
+
 # ------------------------------------------------- test fixture (tiny, sharp)
 W, H = 96, 128
 img, d = new(W, H)

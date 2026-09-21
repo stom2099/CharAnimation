@@ -27,7 +27,8 @@ export const vi = {
   'matte.cancel': 'Huỷ',
   'matte.loadingModel': 'Đang tải mô hình AI',
   'matte.processing': 'Đang xử lý ảnh',
-  'matte.firstRun': 'Lần đầu cần tải khoảng 40 MB. Những lần sau chạy ngay, kể cả khi mất mạng.',
+  'matte.firstRun':
+    'Lần đầu cần tải mô hình và bộ chạy, vài chục MB. Những lần sau chạy ngay, kể cả khi mất mạng.',
   'matte.done': 'Xong trong {0}',
   'matte.failed': 'Tách nền thất bại',
   'matte.retry': 'Thử lại',

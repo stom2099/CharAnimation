@@ -128,6 +128,30 @@ export async function buildCutout(image: ImageData, paddingRatio = 0.18): Promis
   };
 }
 
+/**
+ * Wraps an already-prepared cutout without trimming it.
+ *
+ * Used when reopening a saved project: the stored PNG has its margin baked in,
+ * and running `buildCutout` over it again would crop that margin off — leaving
+ * the sprite to clip against its own edges mid-swing.
+ */
+export async function adoptCutout(
+  image: ImageData,
+  subject?: BBox,
+  paddingRatio = 0,
+): Promise<Cutout> {
+  const bounds =
+    subject ??
+    alphaBBox({ data: image.data, width: image.width, height: image.height }) ?? {
+      x: 0,
+      y: 0,
+      width: image.width,
+      height: image.height,
+    };
+  const blob = await imageDataToBlob(image.data, image.width, image.height);
+  return { image, width: image.width, height: image.height, subject: bounds, paddingRatio, blob };
+}
+
 /** Where the subject's feet sit inside the cutout — the natural sway pivot. */
 export function suggestPivot(cutout: Cutout): { pu: number; pv: number } {
   const { subject, width, height } = cutout;

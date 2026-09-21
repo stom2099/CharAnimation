@@ -4,7 +4,12 @@
 
 - Phiên bản kế hoạch: 1.0 (2026-09-21)
 - Nhánh: `claude/character-animation-from-image-13cd9d`
-- Trạng thái: chờ thực hiện
+- Trạng thái: **đã thực hiện xong**
+
+> Đây là kế hoạch gốc, giữ nguyên để đối chiếu. Hệ thống **như đã xây dựng** được
+> mô tả ở [`ARCHITECTURE.md`](ARCHITECTURE.md), trong đó có bảng liệt kê những
+> chỗ bản thực tế khác kế hoạch và lý do. Số đo hiệu năng thật nằm ở
+> [`BENCHMARK.md`](BENCHMARK.md).
 
 ---
 

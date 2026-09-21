@@ -94,14 +94,44 @@ export class FrameRenderer {
   }
 }
 
+export interface ContentBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Bounds swept by the animation, in cutout pixel space. */
-export function contentBox(grid: Grid, params: AnimParams) {
+export function contentBox(grid: Grid, params: AnimParams): ContentBox {
   const b = sweptBounds(grid, params, 32);
   return {
     x: b.minX,
     y: b.minY,
     width: Math.max(1, b.maxX - b.minX),
     height: Math.max(1, b.maxY - b.minY),
+  };
+}
+
+/**
+ * Memoised `contentBox` for the render loop.
+ *
+ * Computing it sweeps the whole lattice 32 times. That is fine once per
+ * parameter change and ruinous once per animation frame, so the result is
+ * cached against the identity of the inputs, which the store replaces whenever
+ * anything actually changes.
+ */
+export function createContentBoxCache(): (grid: Grid, params: AnimParams) => ContentBox {
+  let lastGrid: Grid | null = null;
+  let lastParams: AnimParams | null = null;
+  let cached: ContentBox = { x: 0, y: 0, width: 1, height: 1 };
+
+  return (grid, params) => {
+    if (grid !== lastGrid || params !== lastParams) {
+      lastGrid = grid;
+      lastParams = params;
+      cached = contentBox(grid, params);
+    }
+    return cached;
   };
 }
 

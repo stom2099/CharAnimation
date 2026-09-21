@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { useProject } from '../../store/project';
-import { useT, type MessageKey } from '../../i18n';
+import { hasMessage, useT } from '../../i18n';
 
 const ICONS = {
   info: Info,
@@ -15,14 +15,13 @@ const TONES = {
 } as const;
 
 /**
- * Toast messages may be plain text or an i18n key with `|`-separated
- * arguments, which lets the store raise messages without importing the
- * dictionary.
+ * A toast message is either plain text or an i18n key with `|`-separated
+ * arguments. That lets the store raise translated messages without importing
+ * the dictionary, while raw error text still passes through untouched.
  */
 function render(message: string, t: ReturnType<typeof useT>): string {
-  if (!message.includes('|') && !message.startsWith('toast.')) return message;
   const [key, ...args] = message.split('|');
-  return t(key as MessageKey, ...args);
+  return hasMessage(key) ? t(key, ...args) : message;
 }
 
 export function Toasts() {

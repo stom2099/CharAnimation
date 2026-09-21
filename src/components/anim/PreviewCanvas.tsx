@@ -1,13 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { createGrid, deform, type Grid } from '../../engine';
-import { createRenderer, contentBox, viewForBox, type MeshRenderer, type View } from '../../render';
+import {
+  createRenderer,
+  createContentBoxCache,
+  viewForBox,
+  type MeshRenderer,
+  type View,
+} from '../../render';
 import { useProject } from '../../store/project';
 
 /** Extra samples per axis; 2 means four samples per displayed pixel. */
-const SUPERSAMPLE = 2;
+const MAX_SUPERSAMPLE = 2;
+const MIN_SUPERSAMPLE = 0.75;
 const MAX_BUFFER_PIXELS = 4_500_000;
 /** How often the scrubber is told the current time. 15 Hz is plenty. */
 const TIME_PUBLISH_MS = 66;
+/** Frame-time thresholds for the adaptive resolution controller. */
+const SLOW_FRAME_MS = 24;
+const FAST_FRAME_MS = 11;
+const ADAPT_WINDOW = 45;
 
 interface Props {
   cutout: ImageData;
@@ -28,6 +39,8 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const gizmoRef = useRef<HTMLDivElement>(null);
+  const supersampleRef = useRef(MAX_SUPERSAMPLE);
+  const resizeRef = useRef<() => void>(() => {});
   const rendererRef = useRef<MeshRenderer | null>(null);
   const gridRef = useRef<Grid | null>(null);
   const positionsRef = useRef<Float32Array>(new Float32Array(0));
@@ -72,7 +85,7 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
       const rect = wrap.getBoundingClientRect();
       // Supersample rather than using MSAA, then let the browser downscale.
       // Capped by total pixels so a large window does not tank the frame rate.
-      const base = Math.min(2, window.devicePixelRatio || 1) * SUPERSAMPLE;
+      const base = Math.min(2, window.devicePixelRatio || 1) * supersampleRef.current;
       const cssPixels = Math.max(1, rect.width * rect.height);
       const dpr = Math.min(base, Math.sqrt(MAX_BUFFER_PIXELS / cssPixels));
       dprRef.current = dpr;
@@ -81,6 +94,7 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
       rendererRef.current?.resize(rect.width * dpr, rect.height * dpr);
     };
 
+    resizeRef.current = resize;
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(wrap);
@@ -93,6 +107,13 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
     let last = performance.now();
     let publishedAt = 0;
     let local = useProject.getState().time;
+    const boxFor = createContentBoxCache();
+
+    // Adaptive resolution: supersampling is what makes deformed edges look
+    // clean, but it is also the main cost. Measure real frame times and trade
+    // sharpness for smoothness only on machines that need it.
+    let frameMs = 16;
+    let sinceAdapt = 0;
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -101,8 +122,22 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
       if (!renderer || !grid) return;
 
       const state = useProject.getState();
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const elapsed = now - last;
+      const dt = Math.min(0.1, elapsed / 1000);
       last = now;
+
+      frameMs += (Math.min(200, elapsed) - frameMs) * 0.1;
+      if (++sinceAdapt >= ADAPT_WINDOW) {
+        sinceAdapt = 0;
+        const current = supersampleRef.current;
+        if (frameMs > SLOW_FRAME_MS && current > MIN_SUPERSAMPLE) {
+          supersampleRef.current = Math.max(MIN_SUPERSAMPLE, current - 0.5);
+          resizeRef.current();
+        } else if (frameMs < FAST_FRAME_MS && current < MAX_SUPERSAMPLE) {
+          supersampleRef.current = Math.min(MAX_SUPERSAMPLE, current + 0.25);
+          resizeRef.current();
+        }
+      }
 
       if (state.playing) {
         local = (local + dt) % state.params.loopSeconds;
@@ -115,7 +150,7 @@ export function PreviewCanvas({ cutout, className = '', onRendererReady }: Props
       }
 
       const dpr = dprRef.current;
-      const box = contentBox(grid, state.params);
+      const box = boxFor(grid, state.params);
       const view = viewForBox(box, renderer.width, renderer.height, 8 * dpr);
       viewRef.current = view;
 

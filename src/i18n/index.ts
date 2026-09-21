@@ -48,6 +48,11 @@ export function translate(locale: Locale, key: MessageKey, ...args: (string | nu
   });
 }
 
+/** True when `key` is a real message key, so raw error text is never mangled. */
+export function hasMessage(key: string): key is MessageKey {
+  return key in DICTIONARIES.en;
+}
+
 export function useT() {
   const locale = useLocale((s) => s.locale);
   return (key: MessageKey, ...args: (string | number)[]) => translate(locale, key, ...args);

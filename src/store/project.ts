@@ -7,8 +7,11 @@ import {
   type PresetId,
 } from '../engine';
 import {
+  adoptCutout,
   buildCutout,
   decodeSource,
+  EmptyCutoutError,
+  ImageDecodeError,
   suggestPivot,
   type Cutout,
   type DecodedSource,
@@ -178,7 +181,7 @@ export const useProject = create<ProjectStore>((set, get) => ({
         );
       }
     } catch (error) {
-      get().pushToast('error', error instanceof Error ? error.message : String(error));
+      get().pushToast('error', describeError(error));
       throw error;
     }
   },
@@ -277,11 +280,10 @@ export const useProject = create<ProjectStore>((set, get) => ({
               ? { pu: suggested.pu, pv: 0.5 }
               : suggested;
       }
-      set({ cutout, matteSettings: settings, params, step: 'animate', dirty: true });
+      set({ cutout, matteSettings: settings, params, dirty: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
       set({ matteSettings: settings });
-      get().pushToast('error', message);
+      get().pushToast('error', describeError(error));
     }
   },
 
@@ -378,6 +380,8 @@ export const useProject = create<ProjectStore>((set, get) => ({
       params: s.params,
       exportOptions: s.exportOptions,
       cutout: s.cutout.blob,
+      subject: s.cutout.subject,
+      paddingRatio: s.cutout.paddingRatio,
       thumbnail,
       sourceName: s.sourceName,
     };
@@ -390,7 +394,7 @@ export const useProject = create<ProjectStore>((set, get) => ({
     if (!stored) return false;
     try {
       const image = await blobToImageData(stored.cutout);
-      const cutout = await buildCutout(image, 0);
+      const cutout = await adoptCutout(image, stored.subject, stored.paddingRatio);
       set({
         ...initialState(),
         id: stored.id,
@@ -411,6 +415,13 @@ export const useProject = create<ProjectStore>((set, get) => ({
     }
   },
 }));
+
+/** Maps known failures onto message keys; anything else keeps its own text. */
+function describeError(error: unknown): string {
+  if (error instanceof ImageDecodeError) return `error.${error.code}`;
+  if (error instanceof EmptyCutoutError) return 'matte.empty';
+  return error instanceof Error ? error.message : String(error);
+}
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;

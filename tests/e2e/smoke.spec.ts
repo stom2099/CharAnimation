@@ -153,10 +153,65 @@ test('exports an APNG with an animation control chunk', async ({ page }) => {
   expect(bytes.includes(Buffer.from('fcTL', 'ascii')), 'APNG frame chunk').toBe(true);
 });
 
-test('keeps working after a reload and remembers the project', async ({ page }) => {
+test('reopening a saved project keeps its framing', async ({ page }) => {
   await openSample(page);
-  await page.waitForTimeout(1200); // let the debounced autosave land
+
+  // The reported output size encodes the cutout margin, so it is a good proxy
+  // for "the project came back exactly as it was".
+  const readSize = async () => {
+    await page.getByTestId('open-export').click();
+    const summary = await page.locator('p.font-mono').innerText();
+    await page.keyboard.press('Escape');
+    return summary.match(/(\d+)×(\d+)/)?.[0];
+  };
+  const before = await readSize();
+  expect(before).toBeTruthy();
+
+  await page.waitForTimeout(1300); // let the debounced autosave land
   await page.reload();
+
   await page.getByRole('button', { name: /Gần đây|Recent/ }).click();
-  await expect(page.getByRole('button', { name: /^(Mở|Open)$/ }).first()).toBeVisible();
+  await page.getByRole('button', { name: /^(Mở|Open)$/ }).first().click();
+  await expect(page.getByTestId('open-export')).toBeVisible({ timeout: 20_000 });
+
+  expect(await readSize()).toBe(before);
+});
+
+test('an opaque image stops on the cut-out step until the user continues', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('file-input').setInputFiles('tests/fixtures/opaque.jpg');
+
+  // No alpha, so the app must not skip ahead on its own.
+  await expect(page.getByTestId('run-removal')).toBeVisible();
+  await expect(page.getByTestId('open-export')).toHaveCount(0);
+
+  // Skipping keeps the user here, where the margin is still adjustable.
+  await page.getByTestId('skip-removal').click();
+  await expect(page.getByTestId('continue-to-animate')).toBeVisible();
+  await expect(page.getByTestId('open-export')).toHaveCount(0);
+
+  await page.getByTestId('continue-to-animate').click();
+  await expect(page.getByTestId('open-export')).toBeVisible();
+  await expect(page.getByTestId('preset-sway')).toBeVisible();
+});
+
+test('reports a clear error when the model cannot be downloaded', async ({ page }) => {
+  // Deterministic offline behaviour: block the weights rather than depending on
+  // whatever the network happens to be doing. The 40 MB download is also far
+  // too slow to sit in a smoke suite.
+  await page.route(/staticimgly\.com|huggingface\.co|cdn-lfs/i, (route) => route.abort());
+
+  await page.goto('/');
+  await page.getByTestId('file-input').setInputFiles('tests/fixtures/opaque.jpg');
+  await page.getByTestId('run-removal').click();
+
+  // A failure must surface, and must not strand the user on a dead screen.
+  await expect(page.getByText(/Tách nền thất bại|Background removal failed/)).toBeVisible({
+    timeout: 90_000,
+  });
+  await expect(page.getByTestId('run-removal')).toBeEnabled();
+
+  await page.getByTestId('skip-removal').click();
+  await page.getByTestId('continue-to-animate').click();
+  await expect(page.getByTestId('open-export')).toBeVisible();
 });
