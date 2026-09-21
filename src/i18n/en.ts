@@ -139,6 +139,10 @@ export const en: Record<MessageKey, string> = {
   'export.download': 'Download again',
   'export.noAlphaWarning': 'This format cannot keep transparency, so the sprite sits on a solid colour.',
   'export.gifWarning': 'GIF transparency is one bit, so edges may look jagged. Use APNG for smooth edges.',
+  'export.tooHeavy':
+    'These settings need about {0} of memory at once, more than the browser can hold. Reduce the size, the frame rate, or the loop length.',
+  'export.heavy':
+    'These settings need about {0} of memory at once. A low-end machine may not manage it.',
   'export.unsupported': 'This browser cannot encode that format.',
 
   'format.gif': 'GIF',

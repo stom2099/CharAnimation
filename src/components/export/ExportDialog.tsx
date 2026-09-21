@@ -5,8 +5,11 @@ import {
   FPS_CHOICES,
   SIZE_CHOICES,
   SUPPORTS_ALPHA,
+  MEMORY_LIMIT_BYTES,
+  MEMORY_WARN_BYTES,
   downloadFiles,
   estimateBytes,
+  peakFrameMemoryBytes,
   probeVideoSupport,
   runExport,
   type ExportFormat,
@@ -66,6 +69,9 @@ export function ExportDialog({ open, onClose }: Props) {
 
   const estimate = estimateBytes(options.format, size.width, size.height, frames);
   const alphaCapable = SUPPORTS_ALPHA[options.format];
+  const peakMemory = peakFrameMemoryBytes(options.format, size.width, size.height, frames);
+  const memoryBlocked = peakMemory > MEMORY_LIMIT_BYTES;
+  const memoryHeavy = !memoryBlocked && peakMemory > MEMORY_WARN_BYTES;
   const formatUnsupported =
     (options.format === 'mp4' && !videoSupport.mp4) ||
     (options.format === 'webm' && !videoSupport.webm);
@@ -145,7 +151,7 @@ export function ExportDialog({ open, onClose }: Props) {
             ) : null}
             <Button
               variant="primary"
-              disabled={!cutout || formatUnsupported}
+              disabled={!cutout || formatUnsupported || memoryBlocked}
               icon={<Download size={15} />}
               data-testid="start-export"
               onClick={() => void start()}
@@ -290,6 +296,14 @@ export function ExportDialog({ open, onClose }: Props) {
           <p className="flex items-start gap-2 text-xs text-warn-400">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
             {t('export.gifWarning')}
+          </p>
+        ) : null}
+        {memoryBlocked || memoryHeavy ? (
+          <p
+            className={`flex items-start gap-2 text-xs ${memoryBlocked ? 'text-danger-400' : 'text-warn-400'}`}
+          >
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            {t(memoryBlocked ? 'export.tooHeavy' : 'export.heavy', formatBytes(peakMemory))}
           </p>
         ) : null}
         {formatUnsupported ? (

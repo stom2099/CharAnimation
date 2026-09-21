@@ -85,6 +85,12 @@ siêu lấy mẫu từ 2× xuống tối thiểu 0,75× khi máy không theo k�
 máy dư sức. Trên bộ rasterizer phần mềm, cơ chế này nâng khung hình từ 19 lên 25
 mỗi giây.
 
+### Buộc dùng bộ vẽ dự phòng
+
+`?renderer=canvas2d` trong URL ép chọn `Canvas2DMeshRenderer`, `?renderer=webgl2`
+thì ngược lại. Đây vừa là lối thoát cho máy có driver lỗi, vừa là cách duy nhất
+đủ thực tế để bộ test end-to-end phủ được nhánh dự phòng.
+
 ### Khung hình được đóng khung theo vùng quét
 
 `contentBox()` lấy bao lồi của **toàn bộ vòng lặp**, không phải của tư thế đứng
@@ -127,6 +133,15 @@ khung và chạy chậm hơn 5%. `frameDelays()` làm tròn tổng tích luỹ t
 khung, nên phần dư được trải đều và tổng thời lượng đúng tuyệt đối. Kiểm chứng
 bằng cách đọc trực tiếp các khối Graphic Control Extension của tệp GIF xuất ra:
 `[7, 6, 7, 7, 6, …]`, tổng đúng 240 cs cho vòng lặp 2,4 giây.
+
+### Chặn trước khi cạn bộ nhớ
+
+APNG là định dạng duy nhất phải giữ toàn bộ chuỗi khung trong bộ nhớ, vì bộ mã
+hoá cần đủ mọi khung mới ghi được tệp. Ở 1024 px và 30 hình/giây, một vòng lặp 8
+giây cần khoảng một gigabyte và sẽ giết tab. `peakFrameMemoryBytes()` tính trước
+con số đó; hộp thoại xuất cảnh báo khi vượt 350 MB và chặn hẳn khi vượt 700 MB,
+kèm gợi ý giảm thiết lập nào. Các định dạng còn lại tiêu thụ khung theo luồng nên
+không bị ràng buộc này.
 
 ### Video
 

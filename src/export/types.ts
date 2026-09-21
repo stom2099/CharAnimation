@@ -73,6 +73,28 @@ export const FORMAT_EXTENSION: Record<ExportFormat, string> = {
   mp4: 'mp4',
 };
 
+/**
+ * Peak memory an export needs for frames it must hold simultaneously.
+ *
+ * APNG is the only format that buffers the whole sequence: the encoder needs
+ * every frame before it can write the file. At 1024 px and 30 fps an eight
+ * second loop would want about a gigabyte, which takes the tab down. GIF,
+ * video and sprite sheets consume frames as they arrive, so they are free.
+ */
+export function peakFrameMemoryBytes(
+  format: ExportFormat,
+  width: number,
+  height: number,
+  frames: number,
+): number {
+  return format === 'apng' ? width * height * 4 * frames : 0;
+}
+
+/** Above this, the browser is likely to run out of memory before it finishes. */
+export const MEMORY_LIMIT_BYTES = 700 * 1024 * 1024;
+/** Above this it still works, but it is worth warning about. */
+export const MEMORY_WARN_BYTES = 350 * 1024 * 1024;
+
 /** `my-cat_sway_512x512_24fps.gif` */
 export function buildFileName(
   base: string,

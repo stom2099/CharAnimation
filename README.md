@@ -80,10 +80,16 @@ Khi deploy vào thư mục con, đặt `PUBLIC_BASE_PATH=/tên-repo/` lúc build
 Sprite sheet xuất kèm JSON theo chuẩn TexturePacker "JSON Hash", nạp thẳng được
 vào Pixi và Phaser.
 
+## Khi máy gặp sự cố đồ hoạ
+
+Thêm `?renderer=canvas2d` vào URL để buộc dùng bộ vẽ dự phòng bằng Canvas2D.
+Chậm hơn WebGL nhưng chạy được trên máy có driver đồ hoạ lỗi, và vẫn xuất tệp
+bình thường.
+
 ## Mức độ đã kiểm chứng
 
-82 unit test phủ phần toán của engine, phép tính alpha và cách xếp sprite sheet.
-10 test end-to-end chạy trên bản build thật và **mở tệp xuất ra để kiểm tra**:
+86 unit test phủ phần toán của engine, phép tính alpha và cách xếp sprite sheet.
+11 test end-to-end chạy trên bản build thật và **mở tệp xuất ra để kiểm tra**:
 chữ ký GIF89a, khối lặp `NETSCAPE2.0`, khối `acTL`/`fcTL` của APNG, và JSON của
 sprite sheet đối chiếu với số khung hình.
 

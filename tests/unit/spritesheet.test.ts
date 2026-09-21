@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { buildSheetMeta, planSheet, sheetFiles } from '../../src/export/spritesheet';
-import { buildFileName, estimateBytes } from '../../src/export';
+import {
+  MEMORY_LIMIT_BYTES,
+  MEMORY_WARN_BYTES,
+  buildFileName,
+  estimateBytes,
+  peakFrameMemoryBytes,
+} from '../../src/export';
 
 describe('planSheet', () => {
   it('lays 48 square frames out in a compact grid', () => {
@@ -128,5 +134,28 @@ describe('estimateBytes', () => {
 
   it('scales with frame count', () => {
     expect(estimateBytes('gif', 256, 256, 60)).toBeCloseTo(estimateBytes('gif', 256, 256, 30) * 2, 5);
+  });
+});
+
+describe('peakFrameMemoryBytes', () => {
+  it('is zero for streaming formats', () => {
+    for (const format of ['gif', 'spritesheet', 'mp4', 'webm'] as const) {
+      expect(peakFrameMemoryBytes(format, 1024, 1024, 240)).toBe(0);
+    }
+  });
+
+  it('accounts for every buffered frame in an APNG', () => {
+    expect(peakFrameMemoryBytes('apng', 100, 100, 10)).toBe(100 * 100 * 4 * 10);
+  });
+
+  it('flags the settings that would exhaust a tab', () => {
+    // 1024 px, 30 fps, an 8 second loop: about a gigabyte of frames.
+    expect(peakFrameMemoryBytes('apng', 1024, 1024, 240)).toBeGreaterThan(MEMORY_LIMIT_BYTES);
+    // A typical export stays well clear of the warning.
+    expect(peakFrameMemoryBytes('apng', 512, 512, 48)).toBeLessThan(MEMORY_WARN_BYTES);
+  });
+
+  it('warns before it blocks', () => {
+    expect(MEMORY_WARN_BYTES).toBeLessThan(MEMORY_LIMIT_BYTES);
   });
 });

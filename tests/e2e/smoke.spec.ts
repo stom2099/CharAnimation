@@ -215,3 +215,41 @@ test('reports a clear error when the model cannot be downloaded', async ({ page 
   await page.getByTestId('continue-to-animate').click();
   await expect(page.getByTestId('open-export')).toBeVisible();
 });
+
+test('the Canvas2D fallback renderer still draws and exports', async ({ page }) => {
+  // ?renderer=canvas2d is the documented escape hatch for broken GPU drivers,
+  // and the only practical way to cover the fallback path.
+  await page.goto('/?renderer=canvas2d');
+  await page.getByTestId('sample-cat').click();
+  await expect(page.getByTestId('open-export')).toBeVisible({ timeout: 30_000 });
+
+  const usesFallback = await page.evaluate(() => {
+    const canvas = document.querySelector('[data-testid=preview-canvas]') as HTMLCanvasElement;
+    return !canvas.getContext('webgl2');
+  });
+  expect(usesFallback, 'the override should have selected Canvas2D').toBe(true);
+
+  // A resize clears the canvas for one frame, so poll rather than sampling once.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const canvas = document.querySelector('[data-testid=preview-canvas]') as HTMLCanvasElement;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return 0;
+          const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          let opaque = 0;
+          for (let i = 3; i < data.length; i += 4) if (data[i] > 24) opaque++;
+          return opaque;
+        }),
+      { message: 'the fallback should draw the sprite', timeout: 15_000 },
+    )
+    .toBeGreaterThan(500);
+
+  await page.getByTestId('open-export').click();
+  await page.getByRole('radio', { name: '12', exact: true }).click();
+  await page.getByRole('radio', { name: '256', exact: true }).click();
+  const download = page.waitForEvent('download', { timeout: 120_000 });
+  await page.getByTestId('start-export').click();
+  expect((await download).suggestedFilename()).toMatch(/\.gif$/);
+});

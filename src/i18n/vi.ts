@@ -137,6 +137,10 @@ export const vi = {
   'export.download': 'Tải lại',
   'export.noAlphaWarning': 'Định dạng này không giữ được nền trong suốt, ảnh sẽ được đặt trên màu nền.',
   'export.gifWarning': 'GIF chỉ có trong suốt một mức nên viền có thể hơi răng cưa. Dùng APNG nếu cần viền mượt.',
+  'export.tooHeavy':
+    'Thiết lập này cần khoảng {0} bộ nhớ cùng lúc, vượt sức trình duyệt. Hãy giảm kích thước, giảm số hình mỗi giây, hoặc rút ngắn vòng lặp.',
+  'export.heavy':
+    'Thiết lập này cần khoảng {0} bộ nhớ cùng lúc. Máy yếu có thể không xuất nổi.',
   'export.unsupported': 'Trình duyệt này không mã hoá được định dạng đó.',
 
   'format.gif': 'GIF',
